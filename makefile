@@ -1,7 +1,7 @@
 GCC=gcc
 
 
-all: client.c server_.c
+all: client.c server.c
 	$(GCC) -c client.c
 	$(GCC) -o client client.o
 	$(GCC) -c server.c
