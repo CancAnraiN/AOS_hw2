@@ -472,20 +472,23 @@ void update_cap_list(int terminate)
 
         fp = fopen("capability_user.txt", "w");
 
+
+	//i for capability group location
         for(int i = 0;i < user_size;i++)
 	{
             fprintf(fp, "%s:%zu\n", cap_user[i].user, cap_user[i].size);
 
-            for(int file_loc = 0;file_loc < cap_user[i].size;file_loc++)
+	    //j for file location
+            for(int j = 0;j < cap_user[i].size;j++)
 	    {
-                fprintf(fp, "%s ", cap_user[i].cap[file_loc].filename);
+                fprintf(fp, "%s ", cap_user[i].cap[j].filename);
 
-                if(cap_user[i].cap[file_loc].read)
+                if(cap_user[i].cap[j].read)
                     fprintf(fp, "r");
                 else
                     fprintf(fp, "-");
                 
-                if(cap_user[i].cap[file_loc].write)
+                if(cap_user[i].cap[j].write)
                     fprintf(fp, "w");
                 else
                     fprintf(fp, "-");
@@ -498,20 +501,20 @@ void update_cap_list(int terminate)
 
         fp = fopen("capability_group.txt", "w");
 
-        for(int group_loc = 0;group_loc < (group_size + 1);group_loc++)
+        for(int i = 0; i < (group_size + 1); i++)
 	{
-            fprintf(fp, "%s:%zu\n", cap_group[group_loc].user, cap_group[group_loc].size);
+            fprintf(fp, "%s:%zu\n", cap_group[i].user, cap_group[i].size);
 
-            for(int file_loc = 0;file_loc < cap_group[group_loc].size;file_loc++)
+            for(int j = 0; j < cap_group[i].size; j++)
 	    {
-                fprintf(fp, "%s ", cap_group[group_loc].cap[file_loc].filename);
+                fprintf(fp, "%s ", cap_group[i].cap[j].filename);
 
-                if(cap_group[group_loc].cap[file_loc].read)
+                if(cap_group[i].cap[j].read)
                     fprintf(fp, "r");
                 else
                     fprintf(fp, "-");
                 
-                if(cap_group[group_loc].cap[file_loc].write)
+                if(cap_group[i].cap[j].write)
                     fprintf(fp, "w");
                 else
                     fprintf(fp, "-");
