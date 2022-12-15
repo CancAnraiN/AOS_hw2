@@ -1,5 +1,7 @@
-AOS-students:1
-hi.txt rw
+AOS-students:2
+hi.txt r-
+4.txt --
 CSE-students:0
-others:1
-hi.txt rw
+others:2
+hi.txt --
+4.txt --

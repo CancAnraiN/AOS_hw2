@@ -23,8 +23,8 @@ const char file_dir[] = "file/";
 
 struct account
 {
-    char usr[STRING_MAX];
-    char grp[STRING_MAX];
+    char user[STRING_MAX];
+    char group[STRING_MAX];
 };
 
 struct account_list
@@ -42,7 +42,7 @@ struct cap
 
 struct cap_list
 {
-    char usr[STRING_MAX];
+    char user[STRING_MAX];
     struct cap cap[ARRAY_MAX];
     size_t size;
 };
@@ -61,7 +61,7 @@ void print_cap()
 
     for(int user_loc = 0;user_loc < user_size;user_loc++)
     {
-        printf("\n%s:\n", cap_user[user_loc].usr);
+        printf("\n%s:\n", cap_user[user_loc].user);
         for(int file_count = 0;file_count < cap_user[user_loc].size;file_count++)
 	{
             printf("\t");
@@ -83,7 +83,7 @@ void print_cap()
 
     for(int group_loc = 0;group_loc < (group_size + 1);group_loc++)
     {
-        printf("\n%s:\n", cap_group[group_loc].usr);
+        printf("\n%s:\n", cap_group[group_loc].user);
         for(int file_count = 0;file_count < cap_group[group_loc].size;file_count++)
 	{
             printf("\t");
@@ -111,7 +111,7 @@ int search_user(struct account *account)
 
     while(user_loc < account_list->size)
     {
-        if(strcmp(account_list->account[user_loc].usr, account->usr) == 0)
+        if(strcmp(account_list->account[user_loc].user, account->user) == 0)
 	{
             return user_loc;
         }
@@ -130,9 +130,9 @@ int search_cap_loc(int search_mode, int cap_size, struct cap_list *cap_list, str
     
     while(cap_loc < cap_size)
     {
-        if((search_mode == CAP_USER) && (strcmp(account->usr, cap_list[cap_loc].usr) == 0))
+        if((search_mode == CAP_USER) && (strcmp(account->user, cap_list[cap_loc].user) == 0))
             return cap_loc;
-        if((search_mode == CAP_GROUP) && (strcmp(account->grp, cap_list[cap_loc].usr) == 0))
+        if((search_mode == CAP_GROUP) && (strcmp(account->group, cap_list[cap_loc].user) == 0))
             return cap_loc;
         
         cap_loc++;
@@ -245,7 +245,7 @@ void send_reply(int clientfd, int success, char *message)
 }
 
 // main of service client function
-void service_client(int clientfd)
+void message_reply(int clientfd)
 {
     int user_loc = 0;
     int user_cap_loc = 0;
@@ -253,7 +253,7 @@ void service_client(int clientfd)
     int others_cap_loc = 0;
 
     struct account account_tmp;
-    recv(clientfd, account_tmp.usr, STRING_MAX, 0);
+    recv(clientfd, account_tmp.user, STRING_MAX, 0);
 
     // If login failed, then close client socket and terminated service process
     if((user_loc = search_user(&account_tmp)) == -1)
@@ -420,19 +420,19 @@ void read_cap_list(char *filename, struct cap_list *cap_list){
 
     char *line = NULL;
     size_t len = 0;
-    char *pch;
+    char *element;
 
     if((fp = fopen(filename, "r")) == NULL)
         exit(EXIT_FAILURE);
     
     while (getline(&line, &len, fp) != -1) 
     {
+	//How many file does user have
+        element = strtok(line, ":");
+        strcpy(cap_list[count].user, element);
 
-        pch = strtok(line, ":");
-        strcpy(cap_list[count].usr, pch);
-
-        pch = strtok(NULL, ":");
-        file_count = atoi(pch);
+        element = strtok(NULL, ":");
+        file_count = atoi(element);
 
         cap_list[count].size = file_count;
 
@@ -440,14 +440,14 @@ void read_cap_list(char *filename, struct cap_list *cap_list){
 	{
             getline(&line, &len, fp);
 
-            pch = strtok(line, " ");
-            strcpy(cap_list[count].cap[i].filename, pch);
+            element = strtok(line, " ");
+            strcpy(cap_list[count].cap[i].filename, element);
 
-            pch = strtok(NULL, " ");
+            element = strtok(NULL, " ");
 
             
-            cap_list[count].cap[i].read = pch[0] == 'r';
-            cap_list[count].cap[i].write = pch[1] == 'w';
+            cap_list[count].cap[i].read = element[0] == 'r';
+            cap_list[count].cap[i].write = element[1] == 'w';
         }
 
         count++;
@@ -456,7 +456,7 @@ void read_cap_list(char *filename, struct cap_list *cap_list){
     fclose(fp);
 }
 
-// Save cap list and close server process
+// Update capability_list and close server process
 void save_cap_list(int signo)
 {
     FILE *fp;
@@ -469,7 +469,7 @@ void save_cap_list(int signo)
         fprintf(fp, "user_size:%d\ngroup_size:%d\n", user_size, group_size);
         for(int acc_loc = 0;acc_loc < account_list->size;acc_loc++)
 	{
-            fprintf(fp, "%s:%s:\n", account_list->account[acc_loc].usr, account_list->account[acc_loc].grp);
+            fprintf(fp, "%s:%s:\n", account_list->account[acc_loc].user, account_list->account[acc_loc].group);
         }
         fclose(fp);
 
@@ -477,7 +477,7 @@ void save_cap_list(int signo)
 
         for(int user_loc = 0;user_loc < user_size;user_loc++)
 	{
-            fprintf(fp, "%s:%zu\n", cap_user[user_loc].usr, cap_user[user_loc].size);
+            fprintf(fp, "%s:%zu\n", cap_user[user_loc].user, cap_user[user_loc].size);
 
             for(int file_loc = 0;file_loc < cap_user[user_loc].size;file_loc++)
 	    {
@@ -503,7 +503,7 @@ void save_cap_list(int signo)
 
         for(int group_loc = 0;group_loc < (group_size + 1);group_loc++)
 	{
-            fprintf(fp, "%s:%zu\n", cap_group[group_loc].usr, cap_group[group_loc].size);
+            fprintf(fp, "%s:%zu\n", cap_group[group_loc].user, cap_group[group_loc].size);
 
             for(int file_loc = 0;file_loc < cap_group[group_loc].size;file_loc++)
 	    {
@@ -524,8 +524,7 @@ void save_cap_list(int signo)
         }
 
         fclose(fp);
-
-        printf("Saved successfully.\n");
+        printf("Capability Saved.\n");
     }
 
     exit(EXIT_SUCCESS);
@@ -538,7 +537,7 @@ int main()
     char line[STRING_MAX];
     size_t len = 0;
 
-    char *pch;
+    char *element;
 
     fp = fopen("account.txt", "r");
     if (fp == NULL)
@@ -547,22 +546,19 @@ int main()
     fscanf(fp, "user_size:%d\n", &user_size);
     fscanf(fp, "group_size:%d\n", &group_size);
 
-    account_list = mmap(NULL, sizeof(struct account_list), PROT_READ | PROT_WRITE, 
-                    MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    cap_user = mmap(NULL, sizeof(struct cap_list) * user_size, PROT_READ | PROT_WRITE, 
-                    MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    cap_group = mmap(NULL, sizeof(struct cap_list) * (group_size + 1), PROT_READ | PROT_WRITE, 
-                    MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    account_list = mmap(NULL, sizeof(struct account_list), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    cap_user = mmap(NULL, sizeof(struct cap_list) * user_size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    cap_group = mmap(NULL, sizeof(struct cap_list) * (group_size + 1), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
     for(int i = 0;i < user_size;i++)
     {
         fscanf(fp, "%s\n", line);
+       
+        element = strtok(line, ":");
+        strcpy(account_list->account[i].user, element);
 
-        pch = strtok(line, ":");
-        strcpy(account_list->account[i].usr, pch);
-
-        pch = strtok(NULL, ":");
-        strcpy(account_list->account[i].grp, pch);
+        element = strtok(NULL, ":");
+        strcpy(account_list->account[i].group, element);	
     }
     account_list->size = user_size;
 
@@ -608,7 +604,7 @@ int main()
         // fork a process to service this new client
         pid = fork();
         if(pid == 0)
-            service_client(clientfd);
+            message_reply(clientfd);
         else
             signal(SIGINT, &save_cap_list);
     }

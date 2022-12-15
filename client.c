@@ -12,17 +12,17 @@
 #define STRING_MAX 50
 const char file_dir[] = "file/";
 
-int recv_result(int sockfd)
+int form_server_message(int sockfd)
 {
-    char result[STRING_MAX];
-    char result_string[STRING_MAX];
+    char flag[STRING_MAX];
+    char message[STRING_MAX];
 
-    recv(sockfd, result, STRING_MAX, 0);
-    recv(sockfd, result_string, STRING_MAX, 0);
+    recv(sockfd, flag, STRING_MAX, 0);
+    recv(sockfd, message, STRING_MAX, 0);
 
-    printf("%s\n", result_string);
+    printf("%s\n", message);
 
-    if(strcmp(result, "1") == 0)
+    if(strcmp(flag, "1") == 0)
         return 0;
     else
         return -1;
@@ -46,6 +46,7 @@ int main()
 
     FILE *fptr;
 
+    /*Create socket and LogIN(丟名子到Server,符合account.txt就可以成功登入)*/
     while(1)
     {
         if((sockfd = socket(PF_INET , SOCK_STREAM , 0)) == -1)
@@ -59,14 +60,14 @@ int main()
 
         send(sockfd, username, STRING_MAX, 0);
 
-        if(recv_result(sockfd) == 0)
+        if(form_server_message(sockfd) == 0)
             break;
     }
     
 
     while(1)
     {
-	printf("Example:\n\tcreate homework2.c rwr---\n\tread homework2.c\n\twrite homework2.c o/a\n\tchmod homework2.c rw----\n\texit *anything*\n\n");
+	printf("Example:\n\tcreate homework2.c rwr---\n\tread homework2.c\n\twrite homework2.c o/a\n\tchmod homework2.c rw----\n\texit *anything*\n############################################################################\n");
         printf("Command: ");
         scanf("%s %s", command, filename);
         char filepath[100];
@@ -82,16 +83,16 @@ int main()
 	{
             scanf("%s", in_put);
             send(sockfd, in_put, STRING_MAX, 0);
-            recv_result(sockfd);
+            form_server_message(sockfd);
         }
         else if(strcmp(command, "read") == 0)
 	{
 
-            if(recv_result(sockfd) == 0)
+            if(form_server_message(sockfd) == 0)
 	    {
                 fptr = fopen(filepath, "r");
                 recv(sockfd, buffer, STRING_MAX, 0);
-                //
+               
 		int file_size = atoi(buffer);
                 size_t string_size = 0;
                 size_t count_size = 0;
@@ -111,7 +112,6 @@ int main()
 		printf("\n");
 
                 fclose(fptr);
-                printf("Completed.\n");
             }
         }
         else if(strcmp(command, "write") == 0)
@@ -119,7 +119,7 @@ int main()
             scanf("%s", in_put);
             send(sockfd, in_put, STRING_MAX, 0);
 
-            if(recv_result(sockfd) == 0)
+            if(form_server_message(sockfd) == 0)
 	    {
                 fptr = fopen(filepath, "w");
 		//
@@ -139,20 +139,19 @@ int main()
 
                     bzero(buffer, sizeof(buffer));
                 }
+
 		fprintf(fptr,"%s",in_put);
 
                 fclose(fptr);
-                printf("Completed.\n");
-            }
-            
+                printf("\nDone.\n");
+            }   
         }
         else if(strcmp(command, "chmod") == 0)
 	{
             scanf("%s", in_put);
             send(sockfd, in_put, STRING_MAX, 0);
-            recv_result(sockfd);
+            form_server_message(sockfd);
         }
-	
         else
 	{
             continue;

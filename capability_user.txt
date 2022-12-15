@@ -1,3 +1,4 @@
 Ken:0
-Can:1
+Can:2
 hi.txt rw
+4.txt rw
