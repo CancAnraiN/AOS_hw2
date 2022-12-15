@@ -11,26 +11,17 @@
 #include <signal.h>
 
 const char file_dir[] = "file/";
-
+#define STRING_MAX 50
+#define READ_PERMISSION 1
+#define WRITE_PERMISSION 2
 #define CAP_USER 1
 #define CAP_GROUP 2
 
-#define READ_PERMISSION 1
-#define WRITE_PERMISSION 2
-
-#define STRING_MAX 50
-#define ARRAY_MAX 50
-
+//////////////////////////////////////////////
 struct account
 {
     char user[STRING_MAX];
     char group[STRING_MAX];
-};
-
-struct account_list
-{
-    struct account account[ARRAY_MAX];
-    size_t size;
 };
 
 struct cap
@@ -40,42 +31,48 @@ struct cap
     char filename[STRING_MAX];
 };
 
+struct account_list
+{
+    struct account account[STRING_MAX];
+    size_t size;
+};
+
 struct cap_list
 {
     char user[STRING_MAX];
-    struct cap cap[ARRAY_MAX];
+    struct cap cap[STRING_MAX];
     size_t size;
 };
 
 struct account_list *account_list;
 struct cap_list *cap_user;
 struct cap_list *cap_group;
-
 int user_size, group_size;
 
 // changemode or create file will call this function.
+// Then print out the capability list
 void print_cap()
 {
     int cap_size = 0;
     cap_size = cap_user->size;
 
-    for(int user_loc = 0;user_loc < user_size;user_loc++)
+    for(int i = 0;i < user_size;i++)
     {
-        printf("\n%s:\n", cap_user[user_loc].user);
-        for(int file_count = 0;file_count < cap_user[user_loc].size;file_count++)
+        printf("\n%s:\n", cap_user[i].user);
+        for(int file_count = 0;file_count < cap_user[i].size;file_count++)
 	{
             printf("\t");
-            if(cap_user[user_loc].cap[file_count].read)
+            if(cap_user[i].cap[file_count].read)
                 printf("r");
             else
                 printf("-");
 
-            if(cap_user[user_loc].cap[file_count].write)
+            if(cap_user[i].cap[file_count].write)
                 printf("w");
             else
                 printf("-");
             
-            printf("\t%s\n", cap_user[user_loc].cap[file_count].filename);
+            printf("\t%s\n", cap_user[i].cap[file_count].filename);
         }
         
     }
@@ -142,12 +139,12 @@ int search_cap(int search_mode, int cap_size, struct cap_list *cap_list, struct 
 }
 
 // Search file location of cap_list
-int search_file_loc(char *filename, int cap_loc, struct cap_list *cap_list)
+int search_file_loc(char *filename, int cap_location, struct cap_list *cap_list)
 {
     int location = 0;
-    for( location = 0;location < cap_list[cap_loc].size;location++)
+    for( location = 0;location < cap_list[cap_location].size;location++)
     {
-        if(strcmp(cap_list[cap_loc].cap[location].filename, filename) == 0)
+        if(strcmp(cap_list[cap_location].cap[location].filename, filename) == 0)
             return location;
     }
 
@@ -457,38 +454,38 @@ void read_cap_list(char *filename, struct cap_list *cap_list){
 }
 
 // Update capability_list and close server process
-void save_cap_list(int signo)
+void update_cap_list(int terminate)
 {
     FILE *fp;
-    if (signo == SIGINT)
+    if (terminate == SIGINT)//receive interrupt signal (ctrl+C)
     {
         printf("\nServer is saving data...\n");
 
         fp = fopen("account.txt", "w");
 
         fprintf(fp, "user_size:%d\ngroup_size:%d\n", user_size, group_size);
-        for(int acc_loc = 0;acc_loc < account_list->size;acc_loc++)
+        for(int i = 0;i < account_list->size;i++)
 	{
-            fprintf(fp, "%s:%s:\n", account_list->account[acc_loc].user, account_list->account[acc_loc].group);
+            fprintf(fp, "%s:%s:\n", account_list->account[i].user, account_list->account[i].group);
         }
         fclose(fp);
 
         fp = fopen("capability_user.txt", "w");
 
-        for(int user_loc = 0;user_loc < user_size;user_loc++)
+        for(int i = 0;i < user_size;i++)
 	{
-            fprintf(fp, "%s:%zu\n", cap_user[user_loc].user, cap_user[user_loc].size);
+            fprintf(fp, "%s:%zu\n", cap_user[i].user, cap_user[i].size);
 
-            for(int file_loc = 0;file_loc < cap_user[user_loc].size;file_loc++)
+            for(int file_loc = 0;file_loc < cap_user[i].size;file_loc++)
 	    {
-                fprintf(fp, "%s ", cap_user[user_loc].cap[file_loc].filename);
+                fprintf(fp, "%s ", cap_user[i].cap[file_loc].filename);
 
-                if(cap_user[user_loc].cap[file_loc].read)
+                if(cap_user[i].cap[file_loc].read)
                     fprintf(fp, "r");
                 else
                     fprintf(fp, "-");
                 
-                if(cap_user[user_loc].cap[file_loc].write)
+                if(cap_user[i].cap[file_loc].write)
                     fprintf(fp, "w");
                 else
                     fprintf(fp, "-");
@@ -574,10 +571,7 @@ int main()
         perror("opening stream socket");
         exit(-1);
     }
-    /*-------------------------------------------------------*/ 
-    /* Create the acceptable connection host with Wildcard */ 
-    /*-------------------------------------------------------*/ 
-    
+
     bzero(&serverInfo, sizeof(serverInfo));
     serverInfo.sin_family = AF_INET; 
     serverInfo.sin_addr.s_addr = INADDR_ANY; 
@@ -606,7 +600,7 @@ int main()
         if(pid == 0)
             message_reply(clientfd);
         else
-            signal(SIGINT, &save_cap_list);
+            signal(SIGINT, &update_cap_list);
     }
     close(sockfd);
 
