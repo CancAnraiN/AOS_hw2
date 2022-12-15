@@ -1,17 +1,17 @@
+#include <stdio.h> 
+#include <stdlib.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <netinet/in.h> 
 #include <netdb.h> 
-#include <stdio.h> 
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 
 const char file_dir[] = "file/";
-#define STRING_MAX 50
+#define MAX_SIZE 50
 #define READ_PERMISSION 1
 #define WRITE_PERMISSION 2
 #define CAP_USER 1
@@ -20,27 +20,27 @@ const char file_dir[] = "file/";
 //////////////////////////////////////////////
 struct account
 {
-    char user[STRING_MAX];
-    char group[STRING_MAX];
+    char user[MAX_SIZE];
+    char group[MAX_SIZE];
 };
 
 struct cap
 {
     short read;
     short write;
-    char filename[STRING_MAX];
+    char filename[MAX_SIZE];
 };
 
 struct account_list
 {
-    struct account account[STRING_MAX];
+    struct account account[MAX_SIZE];
     size_t size;
 };
 
 struct cap_list
 {
-    char user[STRING_MAX];
-    struct cap cap[STRING_MAX];
+    char user[MAX_SIZE];
+    struct cap cap[MAX_SIZE];
     size_t size;
 };
 
@@ -236,11 +236,11 @@ void send_reply(int clientfd, int success, char *message)
     printf("%s\n", message);
 
     if(success == 1)
-        send(clientfd, "1", STRING_MAX, 0);
+        send(clientfd, "1", MAX_SIZE, 0);
     else if(success == 0)
-        send(clientfd, "0", STRING_MAX, 0);
+        send(clientfd, "0", MAX_SIZE, 0);
     
-    send(clientfd, message, STRING_MAX, 0);
+    send(clientfd, message, MAX_SIZE, 0);
 }
 
 // For server/ client interact 
@@ -252,7 +252,7 @@ void server_reply(int clientfd)
     int others_cap = 0;
 
     struct account account_tmp;
-    recv(clientfd, account_tmp.user, STRING_MAX, 0);
+    recv(clientfd, account_tmp.user, MAX_SIZE, 0);
 
     // If login failed, then close client socket and terminated service process
     if((index = search_user(&account_tmp)) == -1)
@@ -280,23 +280,23 @@ void server_reply(int clientfd)
     send_reply(clientfd, 1, "Successful login.");
 
     FILE *fp;
-    char operation[STRING_MAX];
-    char filename[STRING_MAX];
-    char filepath[STRING_MAX * 2];
-    char input[STRING_MAX];
-    char buffer[STRING_MAX] = {0};
+    char operation[MAX_SIZE];
+    char filename[MAX_SIZE];
+    char filepath[MAX_SIZE * 2];
+    char input[MAX_SIZE];
+    char buffer[MAX_SIZE] = {0};
 
     while(1)
     {
         bzero(filepath, sizeof(filepath));
 
-        recv(clientfd, operation, STRING_MAX, 0);
-        recv(clientfd, filename, STRING_MAX, 0);
+        recv(clientfd, operation, MAX_SIZE, 0);
+        recv(clientfd, filename, MAX_SIZE, 0);
         sprintf(filepath, "%s%s", file_dir, filename);
         
         if(strcmp(operation, "create") == 0)
 	{
-            recv(clientfd, input, STRING_MAX, 0);
+            recv(clientfd, input, MAX_SIZE, 0);
 
             if(access(filepath, F_OK) == -1)
 	    {
@@ -327,7 +327,7 @@ void server_reply(int clientfd)
                     fseek(fp, 0, SEEK_SET);
 
                     sprintf(buffer, "%d", file_size);
-                    send(clientfd, buffer, STRING_MAX, 0);
+                    send(clientfd, buffer, MAX_SIZE, 0);
                     
                     size_t string_size = 0;
                     while((string_size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
@@ -345,7 +345,7 @@ void server_reply(int clientfd)
         }
         else if(strcmp(operation, "write") == 0)
 	{
-            recv(clientfd, input, STRING_MAX, 0);
+            recv(clientfd, input, MAX_SIZE, 0);
 
             if(search_file_permission(WRITE_PERMISSION, filename, user_cap, group_cap, others_cap) == 0)
 	    {
@@ -365,14 +365,14 @@ void server_reply(int clientfd)
                     
                     send_reply(clientfd, 1, "Ready to write.");
                     
-                    recv(clientfd, buffer, STRING_MAX, 0);
+                    recv(clientfd, buffer, MAX_SIZE, 0);
                     int file_size = atoi(buffer);
                     
                     size_t string_size = 0;
                     size_t count_size = 0;
                     while(count_size != file_size)
 		    {
-                        string_size = recv(clientfd, buffer, STRING_MAX, 0);
+                        string_size = recv(clientfd, buffer, MAX_SIZE, 0);
                         fwrite(buffer, 1, string_size, fp);
 
                         count_size += string_size;
@@ -388,7 +388,7 @@ void server_reply(int clientfd)
         }
         else if(strcmp(operation, "chmod") == 0)
 	{
-            recv(clientfd, input, STRING_MAX, 0);
+            recv(clientfd, input, MAX_SIZE, 0);
             if(access(filepath, F_OK) == 0)
 	    {
                 if(search_file_loc(filename, user_cap, cap_user) != -1)
@@ -537,7 +537,7 @@ int main()
 {
     FILE *fp;
     
-    char line[STRING_MAX];
+    char line[MAX_SIZE];
     size_t len = 0;
 
     char *element;

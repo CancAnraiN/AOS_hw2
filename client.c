@@ -9,16 +9,16 @@
 #include <string.h>
 #include <unistd.h>
 
-#define STRING_MAX 50
+#define MAX_SIZE 50
 const char file_dir[] = "file/";
 
 int form_server_message(int sockfd)
 {
-    char flag[STRING_MAX];
-    char message[STRING_MAX];
+    char flag[MAX_SIZE];
+    char message[MAX_SIZE];
 
-    recv(sockfd, flag, STRING_MAX, 0);
-    recv(sockfd, message, STRING_MAX, 0);
+    recv(sockfd, flag, MAX_SIZE, 0);
+    recv(sockfd, message, MAX_SIZE, 0);
 
     printf("%s\n", message);
 
@@ -31,11 +31,11 @@ int form_server_message(int sockfd)
 int main()
 {
 
-    char command[STRING_MAX];
-    char filename[STRING_MAX];
-    char in_put[STRING_MAX];
-    char buffer[STRING_MAX];
-    char username[STRING_MAX];
+    char command[MAX_SIZE];
+    char filename[MAX_SIZE];
+    char in_put[MAX_SIZE];
+    char buffer[MAX_SIZE];
+    char username[MAX_SIZE];
     int sockfd = 0;
     struct sockaddr_in info;
 
@@ -58,7 +58,7 @@ int main()
         printf("Username: ");
         scanf("%s", username);
 
-        send(sockfd, username, STRING_MAX, 0);
+        send(sockfd, username, MAX_SIZE, 0);
 
         if(form_server_message(sockfd) == 0)
             break;
@@ -76,13 +76,13 @@ int main()
         if(strcmp(command, "exit") == 0)
             exit(0);
         
-        send(sockfd, command, STRING_MAX, 0);
-        send(sockfd, filename, STRING_MAX, 0);
+        send(sockfd, command, MAX_SIZE, 0);
+        send(sockfd, filename, MAX_SIZE, 0);
 
         if(strcmp(command, "create") == 0)
 	{
             scanf("%s", in_put);
-            send(sockfd, in_put, STRING_MAX, 0);
+            send(sockfd, in_put, MAX_SIZE, 0);
             form_server_message(sockfd);
         }
         else if(strcmp(command, "read") == 0)
@@ -91,14 +91,14 @@ int main()
             if(form_server_message(sockfd) == 0)
 	    {
                 fptr = fopen(filepath, "r");
-                recv(sockfd, buffer, STRING_MAX, 0);
+                recv(sockfd, buffer, MAX_SIZE, 0);
                
 		int file_size = atoi(buffer);
                 size_t string_size = 0;
                 size_t count_size = 0;
                 while(count_size != file_size)
 		{
-                    string_size = recv(sockfd, buffer, STRING_MAX, 0);
+                    string_size = recv(sockfd, buffer, MAX_SIZE, 0);
                     fwrite(buffer, 1, string_size, fptr);
                     count_size += string_size;
                     bzero(buffer, sizeof(buffer));
@@ -117,7 +117,7 @@ int main()
         else if(strcmp(command, "write") == 0)
 	{
             scanf("%s", in_put);
-            send(sockfd, in_put, STRING_MAX, 0);
+            send(sockfd, in_put, MAX_SIZE, 0);
 
             if(form_server_message(sockfd) == 0)
 	    {
@@ -130,7 +130,7 @@ int main()
                 fseek(fptr, 0, SEEK_SET);
 			
                 sprintf(buffer, "%d", file_size);
-                send(sockfd, buffer, STRING_MAX, 0);
+                send(sockfd, buffer, MAX_SIZE, 0);
                 
                 size_t string_size = 0;
                 while((string_size = fread(buffer, 1, sizeof(buffer), fptr)) > 0)
@@ -149,7 +149,7 @@ int main()
         else if(strcmp(command, "chmod") == 0)
 	{
             scanf("%s", in_put);
-            send(sockfd, in_put, STRING_MAX, 0);
+            send(sockfd, in_put, MAX_SIZE, 0);
             form_server_message(sockfd);
         }
         else
