@@ -390,7 +390,7 @@ void service_client(int clientfd)
                 send_reply(clientfd, 0, "No permission to write or file does not exists.");
 
         }
-        else if(strcmp(operation, "changemode") == 0)
+        else if(strcmp(operation, "chmod") == 0)
 	{
             recv(clientfd, auth, STRING_MAX, 0);
             if(access(filepath, F_OK) == 0)
@@ -590,7 +590,7 @@ int main()
     bzero(&serverInfo, sizeof(serverInfo));
     serverInfo.sin_family = AF_INET; 
     serverInfo.sin_addr.s_addr = INADDR_ANY; 
-    serverInfo.sin_port = htons(8787);
+    serverInfo.sin_port = htons(1234);
 
     if(bind(sockfd, (struct sockaddr *)&serverInfo, sizeof serverInfo) < 0)
     {

@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #define STRING_MAX 50
+const char file_dir[] = "file/";
 
 int recv_result(int sockfd)
 {
@@ -35,13 +36,13 @@ int main()
     bzero(&info,sizeof(info));
     info.sin_family = AF_INET;
     info.sin_addr.s_addr = inet_addr("127.0.0.1");
-    info.sin_port = htons(8787);
+    info.sin_port = htons(1234);
 
     FILE *fp;
 
     char operation[STRING_MAX];
     char filename[STRING_MAX];
-    char auth[STRING_MAX];
+    char content[STRING_MAX];
     char buffer[STRING_MAX];
 
     char username[STRING_MAX];
@@ -72,7 +73,9 @@ int main()
     {
         printf("Please Enter operation: ");
         scanf("%s %s", operation, filename);
-        
+        char filepath[100];
+    	sprintf(filepath, "%s%s", file_dir, filename);
+
         if(strcmp(operation, "exit") == 0)
             exit(0);
         
@@ -81,8 +84,8 @@ int main()
 
         if(strcmp(operation, "create") == 0)
 	{
-            scanf("%s", auth);
-            send(sockfd, auth, STRING_MAX, 0);
+            scanf("%s", content);
+            send(sockfd, content, STRING_MAX, 0);
             recv_result(sockfd);
         }
         else if(strcmp(operation, "read") == 0)
@@ -90,7 +93,7 @@ int main()
 
             if(recv_result(sockfd) == 0)
 	    {
-                fp = fopen(filename, "wb");
+                fp = fopen(filepath, "r");
 
                 recv(sockfd, buffer, STRING_MAX, 0);
                 int file_size = atoi(buffer);
@@ -105,6 +108,13 @@ int main()
                     count_size += string_size;
                     bzero(buffer, sizeof(buffer));
                 }
+		char c;
+
+    		while ((c=getc(fp)) != EOF) 
+		{
+         		printf("%c", c);
+    		}
+		printf("\n");
 
                 fclose(fp);
                 printf("Transfer completed.\n");
@@ -112,12 +122,12 @@ int main()
         }
         else if(strcmp(operation, "write") == 0)
 	{
-            scanf("%s", auth);
-            send(sockfd, auth, STRING_MAX, 0);
+            scanf("%s", content);
+            send(sockfd, content, STRING_MAX, 0);
 
             if(recv_result(sockfd) == 0)
 	    {
-                fp = fopen(filename, "rb");
+                fp = fopen(filepath, "w");
 
                 int file_size = 0;
 
@@ -136,23 +146,23 @@ int main()
 
                     bzero(buffer, sizeof(buffer));
                 }
+		fprintf(fp,"%s",content);
 
                 fclose(fp);
                 printf("Transfer completed.\n");
             }
             
         }
-        else if(strcmp(operation, "changemode") == 0)
+        else if(strcmp(operation, "chmod") == 0)
 	{
-            scanf("%s", auth);
-            send(sockfd, auth, STRING_MAX, 0);
+            scanf("%s", content);
+            send(sockfd, content, STRING_MAX, 0);
             recv_result(sockfd);
         }
         else
 	{
             char ch;
             while ((ch = getchar()) != EOF && ch != '\n');
-            // fflush(stdin);
         }
     }
 

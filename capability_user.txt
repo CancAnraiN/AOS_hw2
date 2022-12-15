@@ -1,0 +1,5 @@
+Ken:1
+123456.txt rw
+Can:2
+123456.txt rw
+123.txt rw

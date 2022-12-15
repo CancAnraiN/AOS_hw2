@@ -1,0 +1,8 @@
+AOS-students:2
+123456.txt rw
+123.txt rw
+CSE-students:1
+123456.txt -w
+others:2
+123456.txt --
+123.txt --
