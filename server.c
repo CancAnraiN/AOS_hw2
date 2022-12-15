@@ -104,15 +104,15 @@ void print_cap()
 // Search user location
 int search_user(struct account *account)
 {
-    int user_loc = 0;
+    int index = 0;
 
-    while(user_loc < account_list->size)
+    while(index < account_list->size)
     {
-        if(strcmp(account_list->account[user_loc].user, account->user) == 0)
+        if(strcmp(account_list->account[index].user, account->user) == 0)
 	{
-            return user_loc;
+            return index;
         }
-        user_loc++;
+        index++;
     }
 
     
@@ -149,6 +149,26 @@ int search_file_loc(char *filename, int cap_location, struct cap_list *cap_list)
     }
 
     return -1;
+}
+
+// Change file read/write permission
+int change_mode(char *filename, char *input, int user_cap, int group_cap, int others_cap)
+{
+    int file_loc = 0;
+
+    file_loc = search_file_loc(filename, user_cap, cap_user);
+    cap_user[user_cap].cap[file_loc].read = input[0] == 'r';
+    cap_user[user_cap].cap[file_loc].write = input[1] == 'w';
+
+    file_loc = search_file_loc(filename, group_cap, cap_group);
+    cap_group[group_cap].cap[file_loc].read = input[2] == 'r';
+    cap_group[group_cap].cap[file_loc].write = input[3] == 'w';
+
+    file_loc = search_file_loc(filename, others_cap, cap_group);
+    cap_group[others_cap].cap[file_loc].read = input[4] == 'r';
+    cap_group[others_cap].cap[file_loc].write = input[5] == 'w';
+
+    return 0;
 }
 
 // Search file permission of user/group/others
@@ -189,27 +209,9 @@ int search_file_permission(int mode, char *filename, int user_cap, int group_cap
         return -1;
 }
 
-// Change file read/write permission
-int change_mode(char *filename, char *input, int user_cap, int group_cap, int others_cap){
-    int file_loc = 0;
-
-    file_loc = search_file_loc(filename, user_cap, cap_user);
-    cap_user[user_cap].cap[file_loc].read = input[0] == 'r';
-    cap_user[user_cap].cap[file_loc].write = input[1] == 'w';
-
-    file_loc = search_file_loc(filename, group_cap, cap_group);
-    cap_group[group_cap].cap[file_loc].read = input[2] == 'r';
-    cap_group[group_cap].cap[file_loc].write = input[3] == 'w';
-
-    file_loc = search_file_loc(filename, others_cap, cap_group);
-    cap_group[others_cap].cap[file_loc].read = input[4] == 'r';
-    cap_group[others_cap].cap[file_loc].write = input[5] == 'w';
-
-    return 0;
-}
-
 // Create file
-int create_file(char *filename, char *input, int user_cap, int group_cap, int others_cap){
+int create_file(char *filename, char *input, int user_cap, int group_cap, int others_cap)
+{
     char filepath[100];
     sprintf(filepath, "%s%s", file_dir, filename);
     creat(filepath, O_CREAT | S_IRWXU);
@@ -241,10 +243,10 @@ void send_reply(int clientfd, int success, char *message)
     send(clientfd, message, STRING_MAX, 0);
 }
 
-// main of service client function
-void message_reply(int clientfd)
+// For server/ client interact 
+void server_reply(int clientfd)
 {
-    int user_loc = 0;
+    int index = 0;
     int user_cap = 0;
     int group_cap = 0;
     int others_cap = 0;
@@ -253,20 +255,20 @@ void message_reply(int clientfd)
     recv(clientfd, account_tmp.user, STRING_MAX, 0);
 
     // If login failed, then close client socket and terminated service process
-    if((user_loc = search_user(&account_tmp)) == -1)
+    if((index = search_user(&account_tmp)) == -1)
     {
         send_reply(clientfd, 0, "Login failed");
         close(clientfd);
     	exit(0);
     }
     
-    if((user_cap = search_cap(CAP_USER, user_size, cap_user, &account_list->account[user_loc])) == -1)
+    if((user_cap = search_cap(CAP_USER, user_size, cap_user, &account_list->account[index])) == -1)
     {
 	close(clientfd);
     	exit(0);
     }
 
-    if((group_cap = search_cap(CAP_GROUP, group_size, cap_group, &account_list->account[user_loc])) == -1)
+    if((group_cap = search_cap(CAP_GROUP, group_size, cap_group, &account_list->account[index])) == -1)
     {
 	close(clientfd);
     	exit(0);
@@ -410,7 +412,8 @@ void message_reply(int clientfd)
 }
 
 
-void read_cap_list(char *filename, struct cap_list *cap_list){
+void read_cap_list(char *filename, struct cap_list *cap_list)
+{
     FILE *fp;
     int file_count;
     int count = 0;
@@ -598,10 +601,10 @@ int main()
             exit(-1);
         }
         
-        // fork a process to service this new client
+        // fork a process for new client
         pid = fork();
         if(pid == 0)
-            message_reply(clientfd);
+            server_reply(clientfd);
         else
             signal(SIGINT, &update_cap_list);
     }
