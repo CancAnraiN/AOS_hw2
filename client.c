@@ -40,13 +40,11 @@ int main()
 
     FILE *fptr;
 
-    char operation[STRING_MAX];
+    char command[STRING_MAX];
     char filename[STRING_MAX];
-    char content[STRING_MAX];
+    char in_put[STRING_MAX];
     char buffer[STRING_MAX];
-
     char username[STRING_MAX];
-    char password[STRING_MAX];
 
     while(1)
     {
@@ -56,13 +54,10 @@ int main()
         if(connect(sockfd,(struct sockaddr *)&info,sizeof(info)) == -1)
             printf("Error\n");
 
-        printf("Please Enter your username: ");
+        printf("Username: ");
         scanf("%s", username);
-        printf("Please Enter your password: ");
-        scanf("%s", password);
 
         send(sockfd, username, STRING_MAX, 0);
-        send(sockfd, password, STRING_MAX, 0);
 
         if(recv_result(sockfd) == 0)
             break;
@@ -71,24 +66,25 @@ int main()
 
     while(1)
     {
-        printf("Please Enter operation: ");
-        scanf("%s %s", operation, filename);
+	printf("Example:\n\tcreate homework2.c rwr---\n\tread homework2.c\n\twrite homework2.c o/a\n\tchmod homework2.c rw----\nexit *anything*\n\n");
+        printf("Command: ");
+        scanf("%s %s", command, filename);
         char filepath[100];
     	sprintf(filepath, "%s%s", file_dir, filename);
 
-        if(strcmp(operation, "exit") == 0)
+        if(strcmp(command, "exit") == 0)
             exit(0);
         
-        send(sockfd, operation, STRING_MAX, 0);
+        send(sockfd, command, STRING_MAX, 0);
         send(sockfd, filename, STRING_MAX, 0);
 
-        if(strcmp(operation, "create") == 0)
+        if(strcmp(command, "create") == 0)
 	{
-            scanf("%s", content);
-            send(sockfd, content, STRING_MAX, 0);
+            scanf("%s", in_put);
+            send(sockfd, in_put, STRING_MAX, 0);
             recv_result(sockfd);
         }
-        else if(strcmp(operation, "read") == 0)
+        else if(strcmp(command, "read") == 0)
 	{
 
             if(recv_result(sockfd) == 0)
@@ -120,10 +116,10 @@ int main()
                 printf("Completed.\n");
             }
         }
-        else if(strcmp(operation, "write") == 0)
+        else if(strcmp(command, "write") == 0)
 	{
-            scanf("%s", content);
-            send(sockfd, content, STRING_MAX, 0);
+            scanf("%s", in_put);
+            send(sockfd, in_put, STRING_MAX, 0);
 
             if(recv_result(sockfd) == 0)
 	    {
@@ -146,17 +142,17 @@ int main()
 
                     bzero(buffer, sizeof(buffer));
                 }
-		fprintf(fptr,"%s",content);
+		fprintf(fptr,"%s",in_put);
 
                 fclose(fptr);
                 printf("Completed.\n");
             }
             
         }
-        else if(strcmp(operation, "chmod") == 0)
+        else if(strcmp(command, "chmod") == 0)
 	{
-            scanf("%s", content);
-            send(sockfd, content, STRING_MAX, 0);
+            scanf("%s", in_put);
+            send(sockfd, in_put, STRING_MAX, 0);
             recv_result(sockfd);
         }
         else

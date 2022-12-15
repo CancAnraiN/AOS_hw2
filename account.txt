@@ -1,4 +1,4 @@
 user_size:2
 group_size:2
-Ken:123:CSE-students
-Can:123456:AOS-students
+Ken:CSE-students:
+Can:AOS-students:

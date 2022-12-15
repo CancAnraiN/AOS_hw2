@@ -24,7 +24,6 @@ const char file_dir[] = "file/";
 struct account
 {
     char usr[STRING_MAX];
-    char pwd[STRING_MAX];
     char grp[STRING_MAX];
 };
 
@@ -114,10 +113,7 @@ int search_user(struct account *account)
     {
         if(strcmp(account_list->account[user_loc].usr, account->usr) == 0)
 	{
-            if(strcmp(account_list->account[user_loc].pwd, account->pwd) == 0)
-                return user_loc;
-            else
-                return -1;
+            return user_loc;
         }
         user_loc++;
     }
@@ -197,26 +193,26 @@ int search_file_permission(int search_mode, char *filename, int user_cap_loc, in
 }
 
 // Change file read/write permission
-int change_mode(char *filename, char *auth, int user_cap_loc, int group_cap_loc, int others_cap_loc){
+int change_mode(char *filename, char *input, int user_cap_loc, int group_cap_loc, int others_cap_loc){
     int file_loc = 0;
 
     file_loc = search_file_loc(filename, user_cap_loc, cap_user);
-    cap_user[user_cap_loc].cap[file_loc].read = auth[0] == 'r';
-    cap_user[user_cap_loc].cap[file_loc].write = auth[1] == 'w';
+    cap_user[user_cap_loc].cap[file_loc].read = input[0] == 'r';
+    cap_user[user_cap_loc].cap[file_loc].write = input[1] == 'w';
 
     file_loc = search_file_loc(filename, group_cap_loc, cap_group);
-    cap_group[group_cap_loc].cap[file_loc].read = auth[2] == 'r';
-    cap_group[group_cap_loc].cap[file_loc].write = auth[3] == 'w';
+    cap_group[group_cap_loc].cap[file_loc].read = input[2] == 'r';
+    cap_group[group_cap_loc].cap[file_loc].write = input[3] == 'w';
 
     file_loc = search_file_loc(filename, others_cap_loc, cap_group);
-    cap_group[others_cap_loc].cap[file_loc].read = auth[4] == 'r';
-    cap_group[others_cap_loc].cap[file_loc].write = auth[5] == 'w';
+    cap_group[others_cap_loc].cap[file_loc].read = input[4] == 'r';
+    cap_group[others_cap_loc].cap[file_loc].write = input[5] == 'w';
 
     return 0;
 }
 
 // Create file
-int create_file(char *filename, char *auth, int user_cap_loc, int group_cap_loc, int others_cap_loc){
+int create_file(char *filename, char *input, int user_cap_loc, int group_cap_loc, int others_cap_loc){
     char filepath[100];
     sprintf(filepath, "%s%s", file_dir, filename);
     creat(filepath, O_CREAT | S_IRWXU);
@@ -229,7 +225,7 @@ int create_file(char *filename, char *auth, int user_cap_loc, int group_cap_loc,
     cap_group[group_cap_loc].size += 1;
     cap_group[others_cap_loc].size += 1;
 
-    change_mode(filename, auth, user_cap_loc, group_cap_loc, others_cap_loc);
+    change_mode(filename, input, user_cap_loc, group_cap_loc, others_cap_loc);
 
     return 0;
 }
@@ -258,7 +254,6 @@ void service_client(int clientfd)
 
     struct account account_tmp;
     recv(clientfd, account_tmp.usr, STRING_MAX, 0);
-    recv(clientfd, account_tmp.pwd, STRING_MAX, 0);
 
     // If login failed, then close client socket and terminated service process
     if((user_loc = search_user(&account_tmp)) == -1)
@@ -289,7 +284,7 @@ void service_client(int clientfd)
     char operation[STRING_MAX];
     char filename[STRING_MAX];
     char filepath[STRING_MAX * 2];
-    char auth[STRING_MAX];
+    char input[STRING_MAX];
     char buffer[STRING_MAX] = {0};
 
     while(1)
@@ -302,11 +297,11 @@ void service_client(int clientfd)
         
         if(strcmp(operation, "create") == 0)
 	{
-            recv(clientfd, auth, STRING_MAX, 0);
+            recv(clientfd, input, STRING_MAX, 0);
 
             if(access(filepath, F_OK) == -1)
 	    {
-                create_file(filename, auth, user_cap_loc, group_cap_loc, others_cap_loc);
+                create_file(filename, input, user_cap_loc, group_cap_loc, others_cap_loc);
                 send_reply(clientfd, 1, "File successfully created.");
                 print_cap();
             }
@@ -351,7 +346,7 @@ void service_client(int clientfd)
         }
         else if(strcmp(operation, "write") == 0)
 	{
-            recv(clientfd, auth, STRING_MAX, 0);
+            recv(clientfd, input, STRING_MAX, 0);
 
             if(search_file_permission(WRITE_PERMISSION, filename, user_cap_loc, group_cap_loc, others_cap_loc) == 0)
 	    {
@@ -362,7 +357,7 @@ void service_client(int clientfd)
                     send_reply(clientfd, 0, "File is reading.");
                 else
 		{
-                    if(auth[0] == 'o')
+                    if(input[0] == 'o')
 		    {
                         fclose(fp);
                         fp = fopen(filepath, "wb");
@@ -394,12 +389,12 @@ void service_client(int clientfd)
         }
         else if(strcmp(operation, "chmod") == 0)
 	{
-            recv(clientfd, auth, STRING_MAX, 0);
+            recv(clientfd, input, STRING_MAX, 0);
             if(access(filepath, F_OK) == 0)
 	    {
                 if(search_file_loc(filename, user_cap_loc, cap_user) != -1)
 		{
-                    change_mode(filename, auth, user_cap_loc, group_cap_loc, others_cap_loc);
+                    change_mode(filename, input, user_cap_loc, group_cap_loc, others_cap_loc);
                     send_reply(clientfd, 1, "Successful changemode.");
                     print_cap();
                 }
@@ -474,7 +469,7 @@ void save_cap_list(int signo)
         fprintf(fp, "user_size:%d\ngroup_size:%d\n", user_size, group_size);
         for(int acc_loc = 0;acc_loc < account_list->size;acc_loc++)
 	{
-            fprintf(fp, "%s:%s:%s\n", account_list->account[acc_loc].usr, account_list->account[acc_loc].pwd, account_list->account[acc_loc].grp);
+            fprintf(fp, "%s:%s:\n", account_list->account[acc_loc].usr, account_list->account[acc_loc].grp);
         }
         fclose(fp);
 
@@ -565,9 +560,6 @@ int main()
 
         pch = strtok(line, ":");
         strcpy(account_list->account[i].usr, pch);
-
-        pch = strtok(NULL, ":");
-        strcpy(account_list->account[i].pwd, pch);
 
         pch = strtok(NULL, ":");
         strcpy(account_list->account[i].grp, pch);

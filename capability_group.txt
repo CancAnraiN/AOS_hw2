@@ -6,5 +6,5 @@ CSE-students:1
 123456.txt -w
 others:3
 123456.txt --
-123.txt --
+123.txt rw
 lovelove.txt --
