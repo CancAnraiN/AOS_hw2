@@ -30,6 +30,12 @@ int recv_result(int sockfd)
 
 int main()
 {
+
+    char command[STRING_MAX];
+    char filename[STRING_MAX];
+    char in_put[STRING_MAX];
+    char buffer[STRING_MAX];
+    char username[STRING_MAX];
     int sockfd = 0;
     struct sockaddr_in info;
 
@@ -39,12 +45,6 @@ int main()
     info.sin_port = htons(1234);
 
     FILE *fptr;
-
-    char command[STRING_MAX];
-    char filename[STRING_MAX];
-    char in_put[STRING_MAX];
-    char buffer[STRING_MAX];
-    char username[STRING_MAX];
 
     while(1)
     {
@@ -66,7 +66,7 @@ int main()
 
     while(1)
     {
-	printf("Example:\n\tcreate homework2.c rwr---\n\tread homework2.c\n\twrite homework2.c o/a\n\tchmod homework2.c rw----\nexit *anything*\n\n");
+	printf("Example:\n\tcreate homework2.c rwr---\n\tread homework2.c\n\twrite homework2.c o/a\n\tchmod homework2.c rw----\n\texit *anything*\n\n");
         printf("Command: ");
         scanf("%s %s", command, filename);
         char filepath[100];
@@ -90,22 +90,20 @@ int main()
             if(recv_result(sockfd) == 0)
 	    {
                 fptr = fopen(filepath, "r");
-
                 recv(sockfd, buffer, STRING_MAX, 0);
-                int file_size = atoi(buffer);
-                
+                //
+		int file_size = atoi(buffer);
                 size_t string_size = 0;
                 size_t count_size = 0;
                 while(count_size != file_size)
 		{
                     string_size = recv(sockfd, buffer, STRING_MAX, 0);
                     fwrite(buffer, 1, string_size, fptr);
-
                     count_size += string_size;
                     bzero(buffer, sizeof(buffer));
                 }
-		char c;
 
+		char c;
     		while ((c=getc(fptr)) != EOF) 
 		{
          		printf("%c", c);
@@ -132,7 +130,6 @@ int main()
                 fseek(fptr, 0, SEEK_SET);
 			
                 sprintf(buffer, "%d", file_size);
-
                 send(sockfd, buffer, STRING_MAX, 0);
                 
                 size_t string_size = 0;
@@ -155,12 +152,10 @@ int main()
             send(sockfd, in_put, STRING_MAX, 0);
             recv_result(sockfd);
         }
+	
         else
 	{
-            char ch;
-            while ((ch = getchar()) != EOF && ch != '\n');
+            continue;
         }
     }
-
-
 }

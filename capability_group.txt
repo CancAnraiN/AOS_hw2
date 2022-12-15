@@ -1,10 +1,5 @@
-AOS-students:3
-123456.txt rw
-123.txt rw
-lovelove.txt --
-CSE-students:1
-123456.txt -w
-others:3
-123456.txt --
-123.txt rw
-lovelove.txt --
+AOS-students:1
+hi.txt rw
+CSE-students:0
+others:1
+hi.txt rw
