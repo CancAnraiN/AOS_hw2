@@ -124,18 +124,18 @@ int search_user(struct account *account)
 
 // Search cap location
 // args - search_mode: search user/group cap
-int search_cap_loc(int search_mode, int cap_size, struct cap_list *cap_list, struct account *account)
+int search_cap(int search_mode, int cap_size, struct cap_list *cap_list, struct account *account)
 {
-    int cap_loc = 0;
+    int location = 0;
     
-    while(cap_loc < cap_size)
+    while(location < cap_size)
     {
-        if((search_mode == CAP_USER) && (strcmp(account->user, cap_list[cap_loc].user) == 0))
-            return cap_loc;
-        if((search_mode == CAP_GROUP) && (strcmp(account->group, cap_list[cap_loc].user) == 0))
-            return cap_loc;
+        if((search_mode == CAP_USER) && (strcmp(account->user, cap_list[location].user) == 0))
+            return location;
+        if((search_mode == CAP_GROUP) && (strcmp(account->group, cap_list[location].user) == 0))
+            return location;
         
-        cap_loc++;
+        location++;
     }
 
     return -1;
@@ -144,8 +144,8 @@ int search_cap_loc(int search_mode, int cap_size, struct cap_list *cap_list, str
 // Search file location of cap_list
 int search_file_loc(char *filename, int cap_loc, struct cap_list *cap_list)
 {
-
-    for(int location = 0;location < cap_list[cap_loc].size;location++)
+    int location = 0;
+    for( location = 0;location < cap_list[cap_loc].size;location++)
     {
         if(strcmp(cap_list[cap_loc].cap[location].filename, filename) == 0)
             return location;
@@ -155,34 +155,34 @@ int search_file_loc(char *filename, int cap_loc, struct cap_list *cap_list)
 }
 
 // Search file permission of user/group/others
-int search_file_permission(int search_mode, char *filename, int user_cap_loc, int group_cap_loc, int others_cap_loc)
+int search_file_permission(int search_mode, char *filename, int user_cap, int group_cap, int others_cap)
 {
     int location = 0;
     int permission = 0;
 
 
-    if((location = search_file_loc(filename, user_cap_loc, cap_user)) != -1)
+    if((location = search_file_loc(filename, user_cap, cap_user)) != -1)
     {
         if(search_mode == READ_PERMISSION)
-            permission |= cap_user[user_cap_loc].cap[location].read;
+            permission |= cap_user[user_cap].cap[location].read;
         else if(search_mode == WRITE_PERMISSION)
-            permission |= cap_user[user_cap_loc].cap[location].write;
+            permission |= cap_user[user_cap].cap[location].write;
     }
 
-    if((location = search_file_loc(filename, group_cap_loc, cap_group)) != -1)
+    if((location = search_file_loc(filename, group_cap, cap_group)) != -1)
     {
         if(search_mode == READ_PERMISSION)
-            permission |= cap_group[group_cap_loc].cap[location].read;
+            permission |= cap_group[group_cap].cap[location].read;
         else if(search_mode == WRITE_PERMISSION)
-            permission |= cap_group[group_cap_loc].cap[location].write;
+            permission |= cap_group[group_cap].cap[location].write;
     }
     else
     {
-        location = search_file_loc(filename, others_cap_loc, cap_group);
+        location = search_file_loc(filename, others_cap, cap_group);
         if(search_mode == READ_PERMISSION)
-            permission |= cap_group[others_cap_loc].cap[location].read;
+            permission |= cap_group[others_cap].cap[location].read;
         else if(search_mode == WRITE_PERMISSION)
-            permission |= cap_group[others_cap_loc].cap[location].write;
+            permission |= cap_group[others_cap].cap[location].write;
 
     }
     
@@ -193,39 +193,39 @@ int search_file_permission(int search_mode, char *filename, int user_cap_loc, in
 }
 
 // Change file read/write permission
-int change_mode(char *filename, char *input, int user_cap_loc, int group_cap_loc, int others_cap_loc){
+int change_mode(char *filename, char *input, int user_cap, int group_cap, int others_cap){
     int file_loc = 0;
 
-    file_loc = search_file_loc(filename, user_cap_loc, cap_user);
-    cap_user[user_cap_loc].cap[file_loc].read = input[0] == 'r';
-    cap_user[user_cap_loc].cap[file_loc].write = input[1] == 'w';
+    file_loc = search_file_loc(filename, user_cap, cap_user);
+    cap_user[user_cap].cap[file_loc].read = input[0] == 'r';
+    cap_user[user_cap].cap[file_loc].write = input[1] == 'w';
 
-    file_loc = search_file_loc(filename, group_cap_loc, cap_group);
-    cap_group[group_cap_loc].cap[file_loc].read = input[2] == 'r';
-    cap_group[group_cap_loc].cap[file_loc].write = input[3] == 'w';
+    file_loc = search_file_loc(filename, group_cap, cap_group);
+    cap_group[group_cap].cap[file_loc].read = input[2] == 'r';
+    cap_group[group_cap].cap[file_loc].write = input[3] == 'w';
 
-    file_loc = search_file_loc(filename, others_cap_loc, cap_group);
-    cap_group[others_cap_loc].cap[file_loc].read = input[4] == 'r';
-    cap_group[others_cap_loc].cap[file_loc].write = input[5] == 'w';
+    file_loc = search_file_loc(filename, others_cap, cap_group);
+    cap_group[others_cap].cap[file_loc].read = input[4] == 'r';
+    cap_group[others_cap].cap[file_loc].write = input[5] == 'w';
 
     return 0;
 }
 
 // Create file
-int create_file(char *filename, char *input, int user_cap_loc, int group_cap_loc, int others_cap_loc){
+int create_file(char *filename, char *input, int user_cap, int group_cap, int others_cap){
     char filepath[100];
     sprintf(filepath, "%s%s", file_dir, filename);
     creat(filepath, O_CREAT | S_IRWXU);
 
-    strcpy(cap_user[user_cap_loc].cap[cap_user[user_cap_loc].size].filename, filename);
-    strcpy(cap_group[group_cap_loc].cap[cap_group[group_cap_loc].size].filename, filename);
-    strcpy(cap_group[others_cap_loc].cap[cap_group[others_cap_loc].size].filename, filename);
+    strcpy(cap_user[user_cap].cap[cap_user[user_cap].size].filename, filename);
+    strcpy(cap_group[group_cap].cap[cap_group[group_cap].size].filename, filename);
+    strcpy(cap_group[others_cap].cap[cap_group[others_cap].size].filename, filename);
 
-    cap_user[user_cap_loc].size += 1;
-    cap_group[group_cap_loc].size += 1;
-    cap_group[others_cap_loc].size += 1;
+    cap_user[user_cap].size += 1;
+    cap_group[group_cap].size += 1;
+    cap_group[others_cap].size += 1;
 
-    change_mode(filename, input, user_cap_loc, group_cap_loc, others_cap_loc);
+    change_mode(filename, input, user_cap, group_cap, others_cap);
 
     return 0;
 }
@@ -248,9 +248,9 @@ void send_reply(int clientfd, int success, char *message)
 void message_reply(int clientfd)
 {
     int user_loc = 0;
-    int user_cap_loc = 0;
-    int group_cap_loc = 0;
-    int others_cap_loc = 0;
+    int user_cap = 0;
+    int group_cap = 0;
+    int others_cap = 0;
 
     struct account account_tmp;
     recv(clientfd, account_tmp.user, STRING_MAX, 0);
@@ -263,20 +263,20 @@ void message_reply(int clientfd)
     	exit(0);
     }
     
-    if((user_cap_loc = search_cap_loc(CAP_USER, user_size, cap_user, &account_list->account[user_loc])) == -1)
+    if((user_cap = search_cap(CAP_USER, user_size, cap_user, &account_list->account[user_loc])) == -1)
     {
 	close(clientfd);
     	exit(0);
     }
 
-    if((group_cap_loc = search_cap_loc(CAP_GROUP, group_size, cap_group, &account_list->account[user_loc])) == -1)
+    if((group_cap = search_cap(CAP_GROUP, group_size, cap_group, &account_list->account[user_loc])) == -1)
     {
 	close(clientfd);
     	exit(0);
     }
 	    
     
-    others_cap_loc = group_size;
+    others_cap = group_size;
     
     send_reply(clientfd, 1, "Successful login.");
 
@@ -301,7 +301,7 @@ void message_reply(int clientfd)
 
             if(access(filepath, F_OK) == -1)
 	    {
-                create_file(filename, input, user_cap_loc, group_cap_loc, others_cap_loc);
+                create_file(filename, input, user_cap, group_cap, others_cap);
                 send_reply(clientfd, 1, "File successfully created.");
                 print_cap();
             }
@@ -310,7 +310,7 @@ void message_reply(int clientfd)
         }
         else if(strcmp(operation, "read") == 0)
 	{
-            if(search_file_permission(READ_PERMISSION, filename, user_cap_loc, group_cap_loc, others_cap_loc) == 0)
+            if(search_file_permission(READ_PERMISSION, filename, user_cap, group_cap, others_cap) == 0)
 	    {
 
                 fp = fopen(filepath, "rb");
@@ -348,7 +348,7 @@ void message_reply(int clientfd)
 	{
             recv(clientfd, input, STRING_MAX, 0);
 
-            if(search_file_permission(WRITE_PERMISSION, filename, user_cap_loc, group_cap_loc, others_cap_loc) == 0)
+            if(search_file_permission(WRITE_PERMISSION, filename, user_cap, group_cap, others_cap) == 0)
 	    {
 
                 fp = fopen(filepath, "ab");
@@ -392,9 +392,9 @@ void message_reply(int clientfd)
             recv(clientfd, input, STRING_MAX, 0);
             if(access(filepath, F_OK) == 0)
 	    {
-                if(search_file_loc(filename, user_cap_loc, cap_user) != -1)
+                if(search_file_loc(filename, user_cap, cap_user) != -1)
 		{
-                    change_mode(filename, input, user_cap_loc, group_cap_loc, others_cap_loc);
+                    change_mode(filename, input, user_cap, group_cap, others_cap);
                     send_reply(clientfd, 1, "Successful changemode.");
                     print_cap();
                 }
@@ -423,7 +423,7 @@ void read_cap_list(char *filename, struct cap_list *cap_list){
     char *element;
 
     if((fp = fopen(filename, "r")) == NULL)
-        exit(EXIT_FAILURE);
+        exit(1);
     
     while (getline(&line, &len, fp) != -1) 
     {
@@ -527,7 +527,7 @@ void save_cap_list(int signo)
         printf("Capability Saved.\n");
     }
 
-    exit(EXIT_SUCCESS);
+    exit(0);
 }
 
 int main() 
@@ -541,7 +541,7 @@ int main()
 
     fp = fopen("account.txt", "r");
     if (fp == NULL)
-        exit(EXIT_FAILURE);
+        exit(1);
     
     fscanf(fp, "user_size:%d\n", &user_size);
     fscanf(fp, "group_size:%d\n", &group_size);

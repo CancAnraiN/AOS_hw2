@@ -1,4 +1,5 @@
 Ken:0
-Can:2
+Can:3
 hi.txt rw
 4.txt rw
+lov.txt rw
