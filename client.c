@@ -38,7 +38,7 @@ int main()
     info.sin_addr.s_addr = inet_addr("127.0.0.1");
     info.sin_port = htons(1234);
 
-    FILE *fp;
+    FILE *fptr;
 
     char operation[STRING_MAX];
     char filename[STRING_MAX];
@@ -93,7 +93,7 @@ int main()
 
             if(recv_result(sockfd) == 0)
 	    {
-                fp = fopen(filepath, "r");
+                fptr = fopen(filepath, "r");
 
                 recv(sockfd, buffer, STRING_MAX, 0);
                 int file_size = atoi(buffer);
@@ -103,21 +103,21 @@ int main()
                 while(count_size != file_size)
 		{
                     string_size = recv(sockfd, buffer, STRING_MAX, 0);
-                    fwrite(buffer, 1, string_size, fp);
+                    fwrite(buffer, 1, string_size, fptr);
 
                     count_size += string_size;
                     bzero(buffer, sizeof(buffer));
                 }
 		char c;
 
-    		while ((c=getc(fp)) != EOF) 
+    		while ((c=getc(fptr)) != EOF) 
 		{
          		printf("%c", c);
     		}
 		printf("\n");
 
-                fclose(fp);
-                printf("Transfer completed.\n");
+                fclose(fptr);
+                printf("Completed.\n");
             }
         }
         else if(strcmp(operation, "write") == 0)
@@ -127,29 +127,29 @@ int main()
 
             if(recv_result(sockfd) == 0)
 	    {
-                fp = fopen(filepath, "w");
+                fptr = fopen(filepath, "w");
+		//
+		int file_size = 0;
 
-                int file_size = 0;
-
-                fseek(fp, 0, SEEK_END);
-                file_size = ftell(fp);
-                fseek(fp, 0, SEEK_SET);
-
+                fseek(fptr, 0, SEEK_END);
+                file_size = ftell(fptr);
+                fseek(fptr, 0, SEEK_SET);
+			
                 sprintf(buffer, "%d", file_size);
 
                 send(sockfd, buffer, STRING_MAX, 0);
                 
                 size_t string_size = 0;
-                while((string_size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
+                while((string_size = fread(buffer, 1, sizeof(buffer), fptr)) > 0)
 		{ 
                     send(sockfd, buffer, string_size, 0);
 
                     bzero(buffer, sizeof(buffer));
                 }
-		fprintf(fp,"%s",content);
+		fprintf(fptr,"%s",content);
 
-                fclose(fp);
-                printf("Transfer completed.\n");
+                fclose(fptr);
+                printf("Completed.\n");
             }
             
         }

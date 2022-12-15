@@ -1,5 +1,6 @@
 Ken:1
 123456.txt rw
-Can:2
+Can:3
 123456.txt rw
 123.txt rw
+lovelove.txt rw

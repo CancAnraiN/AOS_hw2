@@ -12,11 +12,11 @@
 
 const char file_dir[] = "file/";
 
-#define SEARCH_CAP_USER 1
-#define SEARCH_CAP_GROUP 2
+#define CAP_USER 1
+#define CAP_GROUP 2
 
-#define SEARCH_READ_PERMISSION 1
-#define SEARCH_WRITE_PERMISSION 2
+#define READ_PERMISSION 1
+#define WRITE_PERMISSION 2
 
 #define STRING_MAX 50
 #define ARRAY_MAX 50
@@ -34,49 +34,49 @@ struct account_list
     size_t size;
 };
 
-struct capability
+struct cap
 {
     short read;
     short write;
     char filename[STRING_MAX];
 };
 
-struct capability_list
+struct cap_list
 {
     char usr[STRING_MAX];
-    struct capability capability[ARRAY_MAX];
+    struct cap cap[ARRAY_MAX];
     size_t size;
 };
 
 struct account_list *account_list;
-struct capability_list *capability_user;
-struct capability_list *capability_group;
+struct cap_list *cap_user;
+struct cap_list *cap_group;
 
 int user_size, group_size;
 
-// Print user/group capability when changemode or create file.
-void print_capability()
+// changemode or create file will call this function.
+void print_cap()
 {
     int cap_size = 0;
-    cap_size = capability_user->size;
+    cap_size = cap_user->size;
 
     for(int user_loc = 0;user_loc < user_size;user_loc++)
     {
-        printf("\n%s:\n", capability_user[user_loc].usr);
-        for(int file_count = 0;file_count < capability_user[user_loc].size;file_count++)
+        printf("\n%s:\n", cap_user[user_loc].usr);
+        for(int file_count = 0;file_count < cap_user[user_loc].size;file_count++)
 	{
             printf("\t");
-            if(capability_user[user_loc].capability[file_count].read)
+            if(cap_user[user_loc].cap[file_count].read)
                 printf("r");
             else
                 printf("-");
 
-            if(capability_user[user_loc].capability[file_count].write)
+            if(cap_user[user_loc].cap[file_count].write)
                 printf("w");
             else
                 printf("-");
             
-            printf("\t%s\n", capability_user[user_loc].capability[file_count].filename);
+            printf("\t%s\n", cap_user[user_loc].cap[file_count].filename);
         }
         
     }
@@ -84,31 +84,26 @@ void print_capability()
 
     for(int group_loc = 0;group_loc < (group_size + 1);group_loc++)
     {
-        printf("\n%s:\n", capability_group[group_loc].usr);
-        for(int file_count = 0;file_count < capability_group[group_loc].size;file_count++)
+        printf("\n%s:\n", cap_group[group_loc].usr);
+        for(int file_count = 0;file_count < cap_group[group_loc].size;file_count++)
 	{
             printf("\t");
-            if(capability_group[group_loc].capability[file_count].read)
+            if(cap_group[group_loc].cap[file_count].read)
                 printf("r");
             else
                 printf("-");
 
-            if(capability_group[group_loc].capability[file_count].write)
+            if(cap_group[group_loc].cap[file_count].write)
                 printf("w");
             else
                 printf("-");
             
-            printf("\t%s\n", capability_group[group_loc].capability[file_count].filename);
+            printf("\t%s\n", cap_group[group_loc].cap[file_count].filename);
         }
     }
 }
 
-// close the client socket
-void service_exit(int clientfd)
-{
-    close(clientfd);
-    exit(0);
-}
+
 
 // Search user location
 int search_user(struct account *account)
@@ -131,17 +126,17 @@ int search_user(struct account *account)
     return -1;
 }
 
-// Search capability location
-// args - search_mode: search user/group capability
-int search_capability_loc(int search_mode, int cap_size, struct capability_list *capability_list, struct account *account)
+// Search cap location
+// args - search_mode: search user/group cap
+int search_cap_loc(int search_mode, int cap_size, struct cap_list *cap_list, struct account *account)
 {
     int cap_loc = 0;
     
     while(cap_loc < cap_size)
     {
-        if((search_mode == SEARCH_CAP_USER) && (strcmp(account->usr, capability_list[cap_loc].usr) == 0))
+        if((search_mode == CAP_USER) && (strcmp(account->usr, cap_list[cap_loc].usr) == 0))
             return cap_loc;
-        if((search_mode == SEARCH_CAP_GROUP) && (strcmp(account->grp, capability_list[cap_loc].usr) == 0))
+        if((search_mode == CAP_GROUP) && (strcmp(account->grp, cap_list[cap_loc].usr) == 0))
             return cap_loc;
         
         cap_loc++;
@@ -150,13 +145,13 @@ int search_capability_loc(int search_mode, int cap_size, struct capability_list 
     return -1;
 }
 
-// Search file location of capability_list
-int search_file_loc(char *filename, int cap_loc, struct capability_list *capability_list)
+// Search file location of cap_list
+int search_file_loc(char *filename, int cap_loc, struct cap_list *cap_list)
 {
 
-    for(int location = 0;location < capability_list[cap_loc].size;location++)
+    for(int location = 0;location < cap_list[cap_loc].size;location++)
     {
-        if(strcmp(capability_list[cap_loc].capability[location].filename, filename) == 0)
+        if(strcmp(cap_list[cap_loc].cap[location].filename, filename) == 0)
             return location;
     }
 
@@ -170,28 +165,28 @@ int search_file_permission(int search_mode, char *filename, int user_cap_loc, in
     int permission = 0;
 
 
-    if((location = search_file_loc(filename, user_cap_loc, capability_user)) != -1)
+    if((location = search_file_loc(filename, user_cap_loc, cap_user)) != -1)
     {
-        if(search_mode == SEARCH_READ_PERMISSION)
-            permission |= capability_user[user_cap_loc].capability[location].read;
-        else if(search_mode == SEARCH_WRITE_PERMISSION)
-            permission |= capability_user[user_cap_loc].capability[location].write;
+        if(search_mode == READ_PERMISSION)
+            permission |= cap_user[user_cap_loc].cap[location].read;
+        else if(search_mode == WRITE_PERMISSION)
+            permission |= cap_user[user_cap_loc].cap[location].write;
     }
 
-    if((location = search_file_loc(filename, group_cap_loc, capability_group)) != -1)
+    if((location = search_file_loc(filename, group_cap_loc, cap_group)) != -1)
     {
-        if(search_mode == SEARCH_READ_PERMISSION)
-            permission |= capability_group[group_cap_loc].capability[location].read;
-        else if(search_mode == SEARCH_WRITE_PERMISSION)
-            permission |= capability_group[group_cap_loc].capability[location].write;
+        if(search_mode == READ_PERMISSION)
+            permission |= cap_group[group_cap_loc].cap[location].read;
+        else if(search_mode == WRITE_PERMISSION)
+            permission |= cap_group[group_cap_loc].cap[location].write;
     }
     else
     {
-        location = search_file_loc(filename, others_cap_loc, capability_group);
-        if(search_mode == SEARCH_READ_PERMISSION)
-            permission |= capability_group[others_cap_loc].capability[location].read;
-        else if(search_mode == SEARCH_WRITE_PERMISSION)
-            permission |= capability_group[others_cap_loc].capability[location].write;
+        location = search_file_loc(filename, others_cap_loc, cap_group);
+        if(search_mode == READ_PERMISSION)
+            permission |= cap_group[others_cap_loc].cap[location].read;
+        else if(search_mode == WRITE_PERMISSION)
+            permission |= cap_group[others_cap_loc].cap[location].write;
 
     }
     
@@ -205,17 +200,17 @@ int search_file_permission(int search_mode, char *filename, int user_cap_loc, in
 int change_mode(char *filename, char *auth, int user_cap_loc, int group_cap_loc, int others_cap_loc){
     int file_loc = 0;
 
-    file_loc = search_file_loc(filename, user_cap_loc, capability_user);
-    capability_user[user_cap_loc].capability[file_loc].read = auth[0] == 'r';
-    capability_user[user_cap_loc].capability[file_loc].write = auth[1] == 'w';
+    file_loc = search_file_loc(filename, user_cap_loc, cap_user);
+    cap_user[user_cap_loc].cap[file_loc].read = auth[0] == 'r';
+    cap_user[user_cap_loc].cap[file_loc].write = auth[1] == 'w';
 
-    file_loc = search_file_loc(filename, group_cap_loc, capability_group);
-    capability_group[group_cap_loc].capability[file_loc].read = auth[2] == 'r';
-    capability_group[group_cap_loc].capability[file_loc].write = auth[3] == 'w';
+    file_loc = search_file_loc(filename, group_cap_loc, cap_group);
+    cap_group[group_cap_loc].cap[file_loc].read = auth[2] == 'r';
+    cap_group[group_cap_loc].cap[file_loc].write = auth[3] == 'w';
 
-    file_loc = search_file_loc(filename, others_cap_loc, capability_group);
-    capability_group[others_cap_loc].capability[file_loc].read = auth[4] == 'r';
-    capability_group[others_cap_loc].capability[file_loc].write = auth[5] == 'w';
+    file_loc = search_file_loc(filename, others_cap_loc, cap_group);
+    cap_group[others_cap_loc].cap[file_loc].read = auth[4] == 'r';
+    cap_group[others_cap_loc].cap[file_loc].write = auth[5] == 'w';
 
     return 0;
 }
@@ -226,13 +221,13 @@ int create_file(char *filename, char *auth, int user_cap_loc, int group_cap_loc,
     sprintf(filepath, "%s%s", file_dir, filename);
     creat(filepath, O_CREAT | S_IRWXU);
 
-    strcpy(capability_user[user_cap_loc].capability[capability_user[user_cap_loc].size].filename, filename);
-    strcpy(capability_group[group_cap_loc].capability[capability_group[group_cap_loc].size].filename, filename);
-    strcpy(capability_group[others_cap_loc].capability[capability_group[others_cap_loc].size].filename, filename);
+    strcpy(cap_user[user_cap_loc].cap[cap_user[user_cap_loc].size].filename, filename);
+    strcpy(cap_group[group_cap_loc].cap[cap_group[group_cap_loc].size].filename, filename);
+    strcpy(cap_group[others_cap_loc].cap[cap_group[others_cap_loc].size].filename, filename);
 
-    capability_user[user_cap_loc].size += 1;
-    capability_group[group_cap_loc].size += 1;
-    capability_group[others_cap_loc].size += 1;
+    cap_user[user_cap_loc].size += 1;
+    cap_group[group_cap_loc].size += 1;
+    cap_group[others_cap_loc].size += 1;
 
     change_mode(filename, auth, user_cap_loc, group_cap_loc, others_cap_loc);
 
@@ -269,14 +264,22 @@ void service_client(int clientfd)
     if((user_loc = search_user(&account_tmp)) == -1)
     {
         send_reply(clientfd, 0, "Login failed");
-        service_exit(clientfd);
+        close(clientfd);
+    	exit(0);
     }
     
-    if((user_cap_loc = search_capability_loc(SEARCH_CAP_USER, user_size, capability_user, &account_list->account[user_loc])) == -1)
-        service_exit(clientfd);
-    
-    if((group_cap_loc = search_capability_loc(SEARCH_CAP_GROUP, group_size, capability_group, &account_list->account[user_loc])) == -1)
-        service_exit(clientfd);
+    if((user_cap_loc = search_cap_loc(CAP_USER, user_size, cap_user, &account_list->account[user_loc])) == -1)
+    {
+	close(clientfd);
+    	exit(0);
+    }
+
+    if((group_cap_loc = search_cap_loc(CAP_GROUP, group_size, cap_group, &account_list->account[user_loc])) == -1)
+    {
+	close(clientfd);
+    	exit(0);
+    }
+	    
     
     others_cap_loc = group_size;
     
@@ -287,7 +290,6 @@ void service_client(int clientfd)
     char filename[STRING_MAX];
     char filepath[STRING_MAX * 2];
     char auth[STRING_MAX];
-
     char buffer[STRING_MAX] = {0};
 
     while(1)
@@ -306,14 +308,14 @@ void service_client(int clientfd)
 	    {
                 create_file(filename, auth, user_cap_loc, group_cap_loc, others_cap_loc);
                 send_reply(clientfd, 1, "File successfully created.");
-                print_capability();
+                print_cap();
             }
             else
                 send_reply(clientfd, 0, "File is already exist.");
         }
         else if(strcmp(operation, "read") == 0)
 	{
-            if(search_file_permission(SEARCH_READ_PERMISSION, filename, user_cap_loc, group_cap_loc, others_cap_loc) == 0)
+            if(search_file_permission(READ_PERMISSION, filename, user_cap_loc, group_cap_loc, others_cap_loc) == 0)
 	    {
 
                 fp = fopen(filepath, "rb");
@@ -351,7 +353,7 @@ void service_client(int clientfd)
 	{
             recv(clientfd, auth, STRING_MAX, 0);
 
-            if(search_file_permission(SEARCH_WRITE_PERMISSION, filename, user_cap_loc, group_cap_loc, others_cap_loc) == 0)
+            if(search_file_permission(WRITE_PERMISSION, filename, user_cap_loc, group_cap_loc, others_cap_loc) == 0)
 	    {
 
                 fp = fopen(filepath, "ab");
@@ -395,11 +397,11 @@ void service_client(int clientfd)
             recv(clientfd, auth, STRING_MAX, 0);
             if(access(filepath, F_OK) == 0)
 	    {
-                if(search_file_loc(filename, user_cap_loc, capability_user) != -1)
+                if(search_file_loc(filename, user_cap_loc, cap_user) != -1)
 		{
                     change_mode(filename, auth, user_cap_loc, group_cap_loc, others_cap_loc);
                     send_reply(clientfd, 1, "Successful changemode.");
-                    print_capability();
+                    print_cap();
                 }
                 else
                     send_reply(clientfd, 0, "No permission to changemode.");
@@ -409,13 +411,14 @@ void service_client(int clientfd)
         }
         else
 	{
-            service_exit(clientfd);
+            close(clientfd);
+	    exit(0);
         }
     }
 }
 
-// Read capability list when open the server
-void read_capability_list(char *filename, struct capability_list *capability_list){
+
+void read_cap_list(char *filename, struct cap_list *cap_list){
     FILE *fp;
     int file_count;
     int count = 0;
@@ -431,25 +434,25 @@ void read_capability_list(char *filename, struct capability_list *capability_lis
     {
 
         pch = strtok(line, ":");
-        strcpy(capability_list[count].usr, pch);
+        strcpy(cap_list[count].usr, pch);
 
         pch = strtok(NULL, ":");
         file_count = atoi(pch);
 
-        capability_list[count].size = file_count;
+        cap_list[count].size = file_count;
 
         for(int i=0;i < file_count;i++)
 	{
             getline(&line, &len, fp);
 
             pch = strtok(line, " ");
-            strcpy(capability_list[count].capability[i].filename, pch);
+            strcpy(cap_list[count].cap[i].filename, pch);
 
             pch = strtok(NULL, " ");
 
             
-            capability_list[count].capability[i].read = pch[0] == 'r';
-            capability_list[count].capability[i].write = pch[1] == 'w';
+            cap_list[count].cap[i].read = pch[0] == 'r';
+            cap_list[count].cap[i].write = pch[1] == 'w';
         }
 
         count++;
@@ -458,8 +461,8 @@ void read_capability_list(char *filename, struct capability_list *capability_lis
     fclose(fp);
 }
 
-// Save capability list and close server process
-void save_capability_list(int signo)
+// Save cap list and close server process
+void save_cap_list(int signo)
 {
     FILE *fp;
     if (signo == SIGINT)
@@ -479,18 +482,18 @@ void save_capability_list(int signo)
 
         for(int user_loc = 0;user_loc < user_size;user_loc++)
 	{
-            fprintf(fp, "%s:%zu\n", capability_user[user_loc].usr, capability_user[user_loc].size);
+            fprintf(fp, "%s:%zu\n", cap_user[user_loc].usr, cap_user[user_loc].size);
 
-            for(int file_loc = 0;file_loc < capability_user[user_loc].size;file_loc++)
+            for(int file_loc = 0;file_loc < cap_user[user_loc].size;file_loc++)
 	    {
-                fprintf(fp, "%s ", capability_user[user_loc].capability[file_loc].filename);
+                fprintf(fp, "%s ", cap_user[user_loc].cap[file_loc].filename);
 
-                if(capability_user[user_loc].capability[file_loc].read)
+                if(cap_user[user_loc].cap[file_loc].read)
                     fprintf(fp, "r");
                 else
                     fprintf(fp, "-");
                 
-                if(capability_user[user_loc].capability[file_loc].write)
+                if(cap_user[user_loc].cap[file_loc].write)
                     fprintf(fp, "w");
                 else
                     fprintf(fp, "-");
@@ -505,18 +508,18 @@ void save_capability_list(int signo)
 
         for(int group_loc = 0;group_loc < (group_size + 1);group_loc++)
 	{
-            fprintf(fp, "%s:%zu\n", capability_group[group_loc].usr, capability_group[group_loc].size);
+            fprintf(fp, "%s:%zu\n", cap_group[group_loc].usr, cap_group[group_loc].size);
 
-            for(int file_loc = 0;file_loc < capability_group[group_loc].size;file_loc++)
+            for(int file_loc = 0;file_loc < cap_group[group_loc].size;file_loc++)
 	    {
-                fprintf(fp, "%s ", capability_group[group_loc].capability[file_loc].filename);
+                fprintf(fp, "%s ", cap_group[group_loc].cap[file_loc].filename);
 
-                if(capability_group[group_loc].capability[file_loc].read)
+                if(cap_group[group_loc].cap[file_loc].read)
                     fprintf(fp, "r");
                 else
                     fprintf(fp, "-");
                 
-                if(capability_group[group_loc].capability[file_loc].write)
+                if(cap_group[group_loc].cap[file_loc].write)
                     fprintf(fp, "w");
                 else
                     fprintf(fp, "-");
@@ -551,9 +554,9 @@ int main()
 
     account_list = mmap(NULL, sizeof(struct account_list), PROT_READ | PROT_WRITE, 
                     MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    capability_user = mmap(NULL, sizeof(struct capability_list) * user_size, PROT_READ | PROT_WRITE, 
+    cap_user = mmap(NULL, sizeof(struct cap_list) * user_size, PROT_READ | PROT_WRITE, 
                     MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    capability_group = mmap(NULL, sizeof(struct capability_list) * (group_size + 1), PROT_READ | PROT_WRITE, 
+    cap_group = mmap(NULL, sizeof(struct cap_list) * (group_size + 1), PROT_READ | PROT_WRITE, 
                     MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
     for(int i = 0;i < user_size;i++)
@@ -571,8 +574,8 @@ int main()
     }
     account_list->size = user_size;
 
-    read_capability_list("capability_user.txt", capability_user);
-    read_capability_list("capability_group.txt", capability_group);
+    read_cap_list("capability_user.txt", cap_user);
+    read_cap_list("capability_group.txt", cap_group);
 
     int sockfd, clientfd; 
     struct sockaddr_in serverInfo; 
@@ -615,7 +618,7 @@ int main()
         if(pid == 0)
             service_client(clientfd);
         else
-            signal(SIGINT, &save_capability_list);
+            signal(SIGINT, &save_cap_list);
     }
     close(sockfd);
 
