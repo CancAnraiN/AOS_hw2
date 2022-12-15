@@ -120,16 +120,16 @@ int search_user(struct account *account)
 }
 
 // Search cap location
-// args - search_mode: search user/group cap
-int search_cap(int search_mode, int cap_size, struct cap_list *cap_list, struct account *account)
+// args - mode: search user/group cap
+int search_cap(int mode, int cap_size, struct cap_list *cap_list, struct account *account)
 {
     int location = 0;
     
     while(location < cap_size)
     {
-        if((search_mode == CAP_USER) && (strcmp(account->user, cap_list[location].user) == 0))
+        if((mode == CAP_USER) && (strcmp(account->user, cap_list[location].user) == 0))
             return location;
-        if((search_mode == CAP_GROUP) && (strcmp(account->group, cap_list[location].user) == 0))
+        if((mode == CAP_GROUP) && (strcmp(account->group, cap_list[location].user) == 0))
             return location;
         
         location++;
@@ -152,7 +152,7 @@ int search_file_loc(char *filename, int cap_location, struct cap_list *cap_list)
 }
 
 // Search file permission of user/group/others
-int search_file_permission(int search_mode, char *filename, int user_cap, int group_cap, int others_cap)
+int search_file_permission(int mode, char *filename, int user_cap, int group_cap, int others_cap)
 {
     int location = 0;
     int permission = 0;
@@ -160,25 +160,25 @@ int search_file_permission(int search_mode, char *filename, int user_cap, int gr
 
     if((location = search_file_loc(filename, user_cap, cap_user)) != -1)
     {
-        if(search_mode == READ_PERMISSION)
+        if(mode == READ_PERMISSION)
             permission |= cap_user[user_cap].cap[location].read;
-        else if(search_mode == WRITE_PERMISSION)
+        else if(mode == WRITE_PERMISSION)
             permission |= cap_user[user_cap].cap[location].write;
     }
 
     if((location = search_file_loc(filename, group_cap, cap_group)) != -1)
     {
-        if(search_mode == READ_PERMISSION)
+        if(mode == READ_PERMISSION)
             permission |= cap_group[group_cap].cap[location].read;
-        else if(search_mode == WRITE_PERMISSION)
+        else if(mode == WRITE_PERMISSION)
             permission |= cap_group[group_cap].cap[location].write;
     }
     else
     {
         location = search_file_loc(filename, others_cap, cap_group);
-        if(search_mode == READ_PERMISSION)
+        if(mode == READ_PERMISSION)
             permission |= cap_group[others_cap].cap[location].read;
-        else if(search_mode == WRITE_PERMISSION)
+        else if(mode == WRITE_PERMISSION)
             permission |= cap_group[others_cap].cap[location].write;
 
     }
@@ -459,7 +459,7 @@ void update_cap_list(int terminate)
     FILE *fp;
     if (terminate == SIGINT)//receive interrupt signal (ctrl+C)
     {
-        printf("\nServer is saving data...\n");
+        printf("\nServer closed.\nSaving data...\n");
 
         fp = fopen("account.txt", "w");
 
